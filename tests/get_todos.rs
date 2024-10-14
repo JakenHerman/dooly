@@ -1,11 +1,11 @@
 use rocket::http::Status;
-use dooly::helpers::{establish_connection, setup_rocket, run_seed_script, cleanup_database};
+use dooly::helpers::{establish_test_connection, setup_rocket, run_seed_script, cleanup_database};
 
 #[test]
 fn test_get_todos() {
     cleanup_database(); // Clean up the database before starting the test
-    let mut connection = establish_connection();
-    run_seed_script(&mut connection); // Seed the database with initial data
+    let mut pool = establish_test_connection();
+    run_seed_script(&mut pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
 

@@ -25,6 +25,14 @@ pub fn get_todos(pool: &State<DbPool>) -> Result<Json<Vec<TodoItem>>, (Status, &
 // Add a new to-do item to the database
 #[post("/todos", format = "json", data = "<new_todo>")]
 pub fn add_todo(pool: &State<DbPool>, new_todo: Json<NewTodoItem>) -> Result<&'static str, (Status, &'static str)> {
+    if new_todo.title.trim().is_empty() {
+        return Err((Status::BadRequest, "Title cannot be empty"));
+    }
+
+    if new_todo.completed {
+        return Err((Status::BadRequest, "New todo item cannot be marked as completed"));
+    }
+
     info!("Adding a new to-do item: {:?}", new_todo);
     let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
     let new_todo = NewTodoItem { title: &new_todo.title, completed: new_todo.completed };
@@ -50,15 +58,35 @@ pub fn delete_todo(pool: &State<DbPool>, id: i32) -> Result<&'static str, (Statu
     Ok("Todo deleted successfully!")
 }
 
-// Update an existing to-do item
 #[put("/todos/<id>", format = "json", data = "<updated_todo>")]
-pub fn update_todo(pool: &State<DbPool>, id: i32, updated_todo: Json<NewTodoItem>) -> Result<&'static str, (Status, &'static str)> {
+pub fn update_todo(
+    pool: &State<DbPool>, 
+    id: i32, 
+    updated_todo: Json<NewTodoItem>
+) -> Result<&'static str, (Status, &'static str)> {
+    if updated_todo.title.trim().is_empty() {
+        return Err((Status::BadRequest, "Title cannot be empty"));
+    }
+
     info!("Updating to-do item with id: {}", id);
     info!("Updated to-do item: {:?}", updated_todo);
-    let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
+    let mut connection = pool.get().map_err(|err| {
+        error!("Failed to get connection from pool: {:?}", err);
+        (Status::InternalServerError, "Failed to get connection from pool")
+    })?;
 
     // Get the existing todo item from the database
     let target = todos::table.find(id);
+
+    let existing_todo: Option<TodoItem> = target.first(&mut connection).optional()
+    .map_err(|err| {
+        error!("Failed to fetch todo: {:?}", err);
+        (Status::InternalServerError, "Failed to fetch todo")
+    })?;
+
+    if existing_todo.is_none() {
+        return Err((Status::NotFound, "Todo item not found"));
+    }
 
     // Create updated data based on existing and new values
     let updated_data = NewTodoItem {
@@ -66,14 +94,17 @@ pub fn update_todo(pool: &State<DbPool>, id: i32, updated_todo: Json<NewTodoItem
         completed: updated_todo.completed,
     };
 
-    // Update the todo in the database
+    // Update the todo in the database and log any potential errors
     diesel::update(target)
         .set((
             todos::dsl::title.eq(updated_data.title),
             todos::dsl::completed.eq(updated_data.completed),
         ))
         .execute(&mut connection)
-        .map_err(|_| (Status::InternalServerError, "Failed to update todo"))?;
+        .map_err(|err| {
+            error!("Failed to update todo in the database: {:?}", err);
+            (Status::InternalServerError, "Failed to update todo")
+        })?;
 
     Ok("Todo updated successfully!")
 }
