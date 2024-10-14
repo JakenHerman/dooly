@@ -4,10 +4,10 @@ use serde_json::json;
 use rocket::http::ContentType;
 
 #[test]
-fn test_update_todo() {
+fn test_valid_update_todo() {
     cleanup_database(); // Clean up the database before starting the test
-    let mut pool = establish_test_connection();
-    run_seed_script(&mut pool).unwrap(); // Seed the database with initial data
+    let pool = establish_test_connection();
+    run_seed_script(&pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
 
@@ -47,4 +47,41 @@ fn test_update_todo() {
     let todos: Vec<TodoItem> = serde_json::from_str(&response.into_string().unwrap()).unwrap();
     assert_eq!(todos[0].title, "Updated Todo Title");
     assert_eq!(todos[0].completed, true);
+}
+
+#[test]
+fn test_invalid_update_todo_empty_title() {
+    cleanup_database(); // Clean up the database before starting the test
+    let pool = establish_test_connection();  // Use pool now
+    run_seed_script(&pool).unwrap(); // Seed the database with initial data
+
+    let client = setup_rocket();
+
+    // Create a new todo item to update
+    let new_todo = json!({
+        "title": "Initial Todo",
+        "completed": false
+    });
+
+    let response = client.post("/todos")
+        .header(ContentType::JSON)
+        .body(new_todo.to_string())
+        .dispatch();
+
+    assert_eq!(response.status(), Status::Ok);
+    assert_eq!(response.into_string().unwrap(), "Todo added successfully!");
+
+    // Attempt to update the existing todo item with an empty title
+    let updated_todo = json!({
+        "title": "",
+        "completed": true
+    });
+
+    let response = client.put("/todos/1")
+        .header(ContentType::JSON)
+        .body(updated_todo.to_string())
+        .dispatch();
+
+    assert_eq!(response.status(), Status::BadRequest);
+    assert_eq!(response.into_string().unwrap(), "Title cannot be empty");
 }

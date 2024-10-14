@@ -4,6 +4,7 @@ use rocket::local::blocking::Client;
 use rocket::{self, routes};
 use crate::routes::{get_todos, add_todo, delete_todo, update_todo, complete_todo};
 use std::fs;
+use std::path::Path;
 use diesel::sql_query;
 use diesel::r2d2::{self, ConnectionManager};
 
@@ -58,5 +59,15 @@ pub fn run_seed_script(pool: &DbPool) -> Result<(), diesel::result::Error> {
 
 pub fn cleanup_database() {
     info!("Cleaning up database");
-    let _ = fs::remove_file("test.sqlite");
+
+    let path = "test.sqlite";
+    if Path::new(path).exists() {
+        if let Err(e) = fs::remove_file(path) {
+            error!("Failed to remove test.sqlite: {:?}", e);
+        } else {
+            info!("Successfully removed test.sqlite");
+        }
+    } else {
+        info!("No test.sqlite file found to remove.");
+    }
 }
