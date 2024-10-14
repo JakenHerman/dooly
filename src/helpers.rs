@@ -7,10 +7,24 @@ use std::fs;
 use diesel::sql_query;
 use diesel::r2d2::{self, ConnectionManager};
 
-pub fn establish_connection() -> SqliteConnection {
-    info!("Establishing database connection with test.sqlite");
+type DbPool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
+
+pub fn establish_test_connection() -> DbPool{
     let database_url = "test.sqlite".to_string();
-    SqliteConnection::establish(&database_url).expect("Failed to create database connection")
+    let manager = ConnectionManager::<SqliteConnection>::new(database_url.clone());
+    info!("Establishing database connection with {}", database_url);
+
+    let pool = r2d2::Pool::builder()
+        .build(manager)
+        .expect("Failed to create pool.");
+
+    // Set PRAGMA busy_timeout to retry if the database is locked
+    let mut connection = pool.get().expect("Failed to get connection from pool.");
+    diesel::sql_query("PRAGMA busy_timeout = 3000;")  // Retry for 3 seconds
+        .execute(&mut connection)
+        .expect("Failed to set PRAGMA busy_timeout");
+
+    pool
 }
 
 pub fn setup_rocket() -> Client {
@@ -25,18 +39,23 @@ pub fn setup_rocket() -> Client {
     Client::tracked(rocket).expect("valid rocket instance")
 }
 
-pub fn run_seed_script(connection: &mut SqliteConnection) {
+pub fn run_seed_script(pool: &DbPool) -> Result<(), diesel::result::Error> {
     info!("Running seed script");
+
+    // Get a connection from the pool
+    let mut connection = pool.get().expect("Failed to get connection from pool.");
+
     let sql = include_str!("../tests/seed.sql");
     for statement in sql.split(';') {
         let trimmed = statement.trim();
         if !trimmed.is_empty() {
             sql_query(trimmed)
-                .execute(connection)
-                .expect("Failed to run seed script");
+                .execute(&mut connection)?;  // Now using pooled connection
         }
     }
+    Ok(())
 }
+
 pub fn cleanup_database() {
     info!("Cleaning up database");
     let _ = fs::remove_file("test.sqlite");

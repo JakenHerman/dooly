@@ -1,13 +1,13 @@
 use rocket::http::Status;
-use dooly::{db::TodoItem, helpers::{cleanup_database, establish_connection, run_seed_script, setup_rocket}};
+use dooly::{db::TodoItem, helpers::{cleanup_database, establish_test_connection, run_seed_script, setup_rocket}};
 use serde_json::json;
 use rocket::http::ContentType;
 
 #[test]
 fn test_complete_todo() {
     cleanup_database(); // Clean up the database before starting the test
-    let mut connection = establish_connection();
-    run_seed_script(&mut connection); // Seed the database with initial data
+    let mut pool = establish_test_connection();
+    run_seed_script(&mut pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
 

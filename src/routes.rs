@@ -25,6 +25,14 @@ pub fn get_todos(pool: &State<DbPool>) -> Result<Json<Vec<TodoItem>>, (Status, &
 // Add a new to-do item to the database
 #[post("/todos", format = "json", data = "<new_todo>")]
 pub fn add_todo(pool: &State<DbPool>, new_todo: Json<NewTodoItem>) -> Result<&'static str, (Status, &'static str)> {
+    if new_todo.title.trim().is_empty() {
+        return Err((Status::BadRequest, "Title cannot be empty"));
+    }
+
+    if new_todo.completed {
+        return Err((Status::BadRequest, "New todo item cannot be marked as completed"));
+    }
+    
     info!("Adding a new to-do item: {:?}", new_todo);
     let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
     let new_todo = NewTodoItem { title: &new_todo.title, completed: new_todo.completed };
