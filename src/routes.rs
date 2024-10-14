@@ -5,23 +5,27 @@ use crate::db::{TodoItem, NewTodoItem};
 use crate::schema::todos;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
+use log::info;
 
 type DbPool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
 // Fetch all to-do items from the database
 #[get("/todos")]
 pub fn get_todos(pool: &State<DbPool>) -> Result<Json<Vec<TodoItem>>, (Status, &'static str)> {
+    info!("Fetching all to-do items");
     let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
     
     let todos: Vec<TodoItem> = todos::table.load(&mut connection)
         .map_err(|_| (Status::InternalServerError, "Failed to fetch todos"))?;
-    
+
+    info!("Fetched {} to-do items", todos.len());
     Ok(Json(todos))
 }
 
 // Add a new to-do item to the database
 #[post("/todos", format = "json", data = "<new_todo>")]
 pub fn add_todo(pool: &State<DbPool>, new_todo: Json<NewTodoItem>) -> Result<&'static str, (Status, &'static str)> {
+    info!("Adding a new to-do item: {:?}", new_todo);
     let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
     let new_todo = NewTodoItem { title: &new_todo.title, completed: new_todo.completed };
     
@@ -36,6 +40,7 @@ pub fn add_todo(pool: &State<DbPool>, new_todo: Json<NewTodoItem>) -> Result<&'s
 // Delete a to-do item
 #[delete("/todos/<id>")]
 pub fn delete_todo(pool: &State<DbPool>, id: i32) -> Result<&'static str, (Status, &'static str)> {
+    info!("Deleting to-do item with id: {}", id);
     let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
     
     diesel::delete(todos::table.find(id))
@@ -48,6 +53,8 @@ pub fn delete_todo(pool: &State<DbPool>, id: i32) -> Result<&'static str, (Statu
 // Update an existing to-do item
 #[put("/todos/<id>", format = "json", data = "<updated_todo>")]
 pub fn update_todo(pool: &State<DbPool>, id: i32, updated_todo: Json<NewTodoItem>) -> Result<&'static str, (Status, &'static str)> {
+    info!("Updating to-do item with id: {}", id);
+    info!("Updated to-do item: {:?}", updated_todo);
     let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
 
     // Get the existing todo item from the database
@@ -74,6 +81,7 @@ pub fn update_todo(pool: &State<DbPool>, id: i32, updated_todo: Json<NewTodoItem
 // Mark a to-do item as completed
 #[put("/todos/<id>/complete")]
 pub fn complete_todo(pool: &State<DbPool>, id: i32) -> Result<&'static str, (Status, &'static str)> {
+    info!("Marking to-do item with id: {} as completed", id);
     let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
 
     // Update the completed status of the todo

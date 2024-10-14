@@ -1,0 +1,5 @@
+[default]
+log_level = "debug"  # or "normal", "critical", etc.
+
+[release]
+log_level = "critical"  # Minimize logging in release builds

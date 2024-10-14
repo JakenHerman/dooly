@@ -8,6 +8,7 @@ use diesel::sql_query;
 use diesel::r2d2::{self, ConnectionManager};
 
 pub fn establish_connection() -> SqliteConnection {
+    info!("Establishing database connection with test.sqlite");
     let database_url = "test.sqlite".to_string();
     SqliteConnection::establish(&database_url).expect("Failed to create database connection")
 }
@@ -25,6 +26,7 @@ pub fn setup_rocket() -> Client {
 }
 
 pub fn run_seed_script(connection: &mut SqliteConnection) {
+    info!("Running seed script");
     let sql = include_str!("../tests/seed.sql");
     for statement in sql.split(';') {
         let trimmed = statement.trim();
@@ -36,5 +38,6 @@ pub fn run_seed_script(connection: &mut SqliteConnection) {
     }
 }
 pub fn cleanup_database() {
+    info!("Cleaning up database");
     let _ = fs::remove_file("test.sqlite");
 }
