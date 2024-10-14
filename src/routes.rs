@@ -1,6 +1,6 @@
 use rocket::http::Status;
 use rocket::State;
-use rocket::serde::{json::Json};
+use rocket::serde::json::Json;
 use crate::db::{TodoItem, NewTodoItem};
 use crate::schema::todos;
 use diesel::prelude::*;
@@ -43,4 +43,44 @@ pub fn delete_todo(pool: &State<DbPool>, id: i32) -> Result<&'static str, (Statu
         .map_err(|_| (Status::InternalServerError, "Failed to delete todo"))?;
     
     Ok("Todo deleted successfully!")
+}
+
+// Update an existing to-do item
+#[put("/todos/<id>", format = "json", data = "<updated_todo>")]
+pub fn update_todo(pool: &State<DbPool>, id: i32, updated_todo: Json<NewTodoItem>) -> Result<&'static str, (Status, &'static str)> {
+    let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
+
+    // Get the existing todo item from the database
+    let target = todos::table.find(id);
+
+    // Create updated data based on existing and new values
+    let updated_data = NewTodoItem {
+        title: updated_todo.title,
+        completed: updated_todo.completed,
+    };
+
+    // Update the todo in the database
+    diesel::update(target)
+        .set((
+            todos::dsl::title.eq(updated_data.title),
+            todos::dsl::completed.eq(updated_data.completed),
+        ))
+        .execute(&mut connection)
+        .map_err(|_| (Status::InternalServerError, "Failed to update todo"))?;
+
+    Ok("Todo updated successfully!")
+}
+
+// Mark a to-do item as completed
+#[put("/todos/<id>/complete")]
+pub fn complete_todo(pool: &State<DbPool>, id: i32) -> Result<&'static str, (Status, &'static str)> {
+    let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
+
+    // Update the completed status of the todo
+    diesel::update(todos::table.find(id))
+        .set(todos::dsl::completed.eq(true))
+        .execute(&mut connection)
+        .map_err(|_| (Status::InternalServerError, "Failed to complete todo"))?;
+
+    Ok("Todo marked as completed!")
 }
