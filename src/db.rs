@@ -3,6 +3,7 @@ use diesel::SqliteConnection;
 use rocket::serde::{Serialize, Deserialize};
 use dotenv::dotenv;
 use std::env;
+use diesel::r2d2::{self, Pool, ConnectionManager};
 
 use crate::schema::todos;
 
@@ -20,10 +21,12 @@ pub struct NewTodoItem<'a> {
     pub completed: bool,
 }
 
-pub fn establish_connection() -> SqliteConnection {
+pub fn establish_connection() -> Pool<ConnectionManager<SqliteConnection>> {
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    
-    SqliteConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
+    let manager = ConnectionManager::<SqliteConnection>::new(database_url.clone());
+    r2d2::Pool::builder()
+        .build(manager)
+        .expect("Failed to create pool.")
 }
