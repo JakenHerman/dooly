@@ -2,7 +2,7 @@ use diesel::prelude::*;
 use diesel::SqliteConnection;
 use rocket::local::blocking::Client;
 use rocket::{self, routes};
-use crate::routes::{get_todos, add_todo, delete_todo};
+use crate::routes::{get_todos, add_todo, delete_todo, update_todo, complete_todo};
 use std::fs;
 use diesel::sql_query;
 use diesel::r2d2::{self, ConnectionManager};
@@ -20,7 +20,7 @@ pub fn setup_rocket() -> Client {
 
     let rocket = rocket::build()
         .manage(pool)
-        .mount("/", routes![get_todos, add_todo, delete_todo]);
+        .mount("/", routes![get_todos, add_todo, delete_todo, update_todo, complete_todo]);
     Client::tracked(rocket).expect("valid rocket instance")
 }
 
