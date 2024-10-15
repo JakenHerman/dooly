@@ -7,7 +7,8 @@ use std::io::Write;
 
 mod db;
 mod schema;
-mod routes;
+mod todos;
+mod user;
 
 #[launch]
 fn rocket() -> _ {
@@ -29,5 +30,5 @@ fn rocket() -> _ {
             info!("Rocket has launched successfully!");
         })))
         .manage(pool)
-        .mount("/", routes![routes::get_todos, routes::add_todo, routes::delete_todo, routes::update_todo, routes::complete_todo])
+        .mount("/", routes![todos::get_todos, todos::add_todo, todos::delete_todo, todos::update_todo, todos::complete_todo, user::create_user, user::get_user_by_id])
 }

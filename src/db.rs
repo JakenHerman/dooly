@@ -1,25 +1,10 @@
 use diesel::prelude::*;
 use diesel::SqliteConnection;
-use rocket::serde::{Serialize, Deserialize};
 use dotenv::dotenv;
 use std::env;
 use diesel::r2d2::{self, Pool, ConnectionManager};
 
-use crate::schema::todos;
-
-#[derive(Queryable, Serialize, Deserialize, Debug)]
-pub struct TodoItem {
-    pub id: i32,
-    pub title: String,
-    pub completed: bool,
-}
-
-#[derive(Insertable, Deserialize, Debug)]
-#[diesel(table_name = todos)]
-pub struct NewTodoItem<'a> {
-    pub title: &'a str,
-    pub completed: bool,
-}
+pub type DbPool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
 pub fn establish_connection() -> Pool<ConnectionManager<SqliteConnection>> {
     dotenv().ok();

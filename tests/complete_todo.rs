@@ -1,5 +1,5 @@
 use rocket::http::Status;
-use dooly::{db::TodoItem, helpers::{cleanup_database, establish_test_connection, run_seed_script, setup_rocket}};
+use dooly::{todos::TodoItem, helpers::{cleanup_database, establish_test_connection, run_seed_script, setup_rocket}};
 use serde_json::json;
 use rocket::http::ContentType;
 
@@ -11,10 +11,11 @@ fn test_complete_todo() {
 
     let client = setup_rocket();
 
-    // Create a new todo item
+    // Create a new todo item with user_id
     let new_todo = json!({
         "title": "Test Incomplete Todo",
-        "completed": false
+        "completed": false,
+        "user_id": 1  // Assign to user with id 1
     });
 
     let response = client.post("/todos")
