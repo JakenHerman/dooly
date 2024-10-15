@@ -3,5 +3,6 @@ extern crate rocket;
 
 pub mod db;
 pub mod schema;
-pub mod routes;
+pub mod todos;
 pub mod helpers;
+pub mod user;

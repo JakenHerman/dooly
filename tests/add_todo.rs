@@ -5,16 +5,17 @@ use rocket::http::ContentType;
 
 #[test]
 fn test_add_valid_todo() {
-    cleanup_database(); // Clean up the database before starting the test
     let mut pool = establish_test_connection();
+    cleanup_database(&mut pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&mut pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
 
-    // Create a valid new todo item
+    // Assume we are assigning this todo to user_id 1 (since it’s the first test user in the seed data)
     let new_todo = json!({
         "title": "Test Todo",
-        "completed": false
+        "completed": false,
+        "user_id": 1  // Assigning to user with id 1
     });
 
     let response = client.post("/todos")
@@ -28,8 +29,8 @@ fn test_add_valid_todo() {
 
 #[test]
 fn test_add_todo_empty_title() {
-    cleanup_database(); // Clean up the database before starting the test
     let mut pool = establish_test_connection();
+    cleanup_database(&mut pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&mut pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
@@ -37,7 +38,8 @@ fn test_add_todo_empty_title() {
     // Create a new todo item with an empty title
     let new_todo_empty_title = json!({
         "title": "",
-        "completed": false
+        "completed": false,
+        "user_id": 1  // Assigning to user with id 1
     });
 
     let response = client.post("/todos")
@@ -51,8 +53,8 @@ fn test_add_todo_empty_title() {
 
 #[test]
 fn test_add_todo_marked_completed() {
-    cleanup_database(); // Clean up the database before starting the test
     let mut pool = establish_test_connection();
+    cleanup_database(&mut pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&mut pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
@@ -60,7 +62,8 @@ fn test_add_todo_marked_completed() {
     // Create a new todo item that is marked as completed
     let new_todo_completed = json!({
         "title": "Test Todo 2",
-        "completed": true
+        "completed": true,
+        "user_id": 1  // Assigning to user with id 1
     });
 
     let response = client.post("/todos")

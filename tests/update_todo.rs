@@ -1,12 +1,12 @@
 use rocket::http::Status;
-use dooly::{db::TodoItem, helpers::{cleanup_database, establish_test_connection, run_seed_script, setup_rocket}};
+use dooly::{todos::TodoItem, helpers::{cleanup_database, establish_test_connection, run_seed_script, setup_rocket}};
 use serde_json::json;
 use rocket::http::ContentType;
 
 #[test]
 fn test_valid_update_todo() {
-    cleanup_database(); // Clean up the database before starting the test
-    let pool = establish_test_connection();
+    let mut pool = establish_test_connection();
+    cleanup_database(&mut pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
@@ -14,7 +14,8 @@ fn test_valid_update_todo() {
     // Create a new todo item to update
     let new_todo = json!({
         "title": "Initial Todo",
-        "completed": false
+        "completed": false,
+        "user_id": 1  // Assign to user with id 1
     });
 
     let response = client.post("/todos")
@@ -28,7 +29,8 @@ fn test_valid_update_todo() {
     // Update the existing todo item
     let updated_todo = json!({
         "title": "Updated Todo Title",
-        "completed": true
+        "completed": true,
+        "user_id": 1  // Ensure the user_id stays the same
     });
 
     let response = client.put("/todos/1")
@@ -51,8 +53,8 @@ fn test_valid_update_todo() {
 
 #[test]
 fn test_invalid_update_todo_empty_title() {
-    cleanup_database(); // Clean up the database before starting the test
-    let pool = establish_test_connection();  // Use pool now
+    let mut pool = establish_test_connection();  // Use pool now
+    cleanup_database(&mut pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
@@ -60,7 +62,8 @@ fn test_invalid_update_todo_empty_title() {
     // Create a new todo item to update
     let new_todo = json!({
         "title": "Initial Todo",
-        "completed": false
+        "completed": false,
+        "user_id": 1  // Assign to user with id 1
     });
 
     let response = client.post("/todos")
@@ -74,7 +77,8 @@ fn test_invalid_update_todo_empty_title() {
     // Attempt to update the existing todo item with an empty title
     let updated_todo = json!({
         "title": "",
-        "completed": true
+        "completed": true,
+        "user_id": 1  // Ensure the user_id stays the same
     });
 
     let response = client.put("/todos/1")

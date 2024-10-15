@@ -1,13 +1,34 @@
 use rocket::http::Status;
 use rocket::State;
 use rocket::serde::json::Json;
-use crate::db::{TodoItem, NewTodoItem};
+use serde::{Serialize, Deserialize};
+use crate::db::DbPool;
 use crate::schema::todos;
 use diesel::prelude::*;
-use diesel::r2d2::{self, ConnectionManager};
 use log::info;
+use chrono::NaiveDate;
 
-type DbPool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
+#[derive(Queryable, Serialize, Deserialize, Debug)]
+pub struct TodoItem {
+    pub id: i32,
+    pub title: String,
+    pub description: Option<String>,
+    pub priority: Option<i32>,
+    pub due_date: Option<NaiveDate>,
+    pub completed: bool,
+    pub user_id: i32,
+}
+
+#[derive(Insertable, Deserialize, Debug)]
+#[diesel(table_name = todos)]
+pub struct NewTodoItem<'a> {
+    pub title: &'a str,
+    pub description: Option<&'a str>,
+    pub priority: Option<i32>,
+    pub due_date: Option<NaiveDate>,
+    pub completed: bool,
+    pub user_id: i32,  // Associate the new todo with a user
+}
 
 // Fetch all to-do items from the database
 #[get("/todos")]
@@ -35,7 +56,7 @@ pub fn add_todo(pool: &State<DbPool>, new_todo: Json<NewTodoItem>) -> Result<&'s
 
     info!("Adding a new to-do item: {:?}", new_todo);
     let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
-    let new_todo = NewTodoItem { title: &new_todo.title, completed: new_todo.completed };
+    let new_todo = NewTodoItem { title: &new_todo.title, completed: new_todo.completed, user_id: new_todo.user_id, description: new_todo.description, priority: new_todo.priority, due_date: new_todo.due_date };
     
     diesel::insert_into(todos::table)
         .values(&new_todo)
@@ -92,6 +113,10 @@ pub fn update_todo(
     let updated_data = NewTodoItem {
         title: updated_todo.title,
         completed: updated_todo.completed,
+        user_id: updated_todo.user_id,
+        description: updated_todo.description,
+        priority: updated_todo.priority,
+        due_date: updated_todo.due_date,
     };
 
     // Update the todo in the database and log any potential errors
