@@ -5,8 +5,8 @@ use rocket::http::ContentType;
 
 #[test]
 fn test_add_valid_todo() {
-    cleanup_database(); // Clean up the database before starting the test
     let mut pool = establish_test_connection();
+    cleanup_database(&mut pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&mut pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
@@ -29,8 +29,8 @@ fn test_add_valid_todo() {
 
 #[test]
 fn test_add_todo_empty_title() {
-    cleanup_database(); // Clean up the database before starting the test
     let mut pool = establish_test_connection();
+    cleanup_database(&mut pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&mut pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
@@ -53,8 +53,8 @@ fn test_add_todo_empty_title() {
 
 #[test]
 fn test_add_todo_marked_completed() {
-    cleanup_database(); // Clean up the database before starting the test
     let mut pool = establish_test_connection();
+    cleanup_database(&mut pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&mut pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();

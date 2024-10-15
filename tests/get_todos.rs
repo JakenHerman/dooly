@@ -3,8 +3,8 @@ use dooly::helpers::{establish_test_connection, setup_rocket, run_seed_script, c
 
 #[test]
 fn test_get_todos() {
-    cleanup_database(); // Clean up the database before starting the test
     let mut pool = establish_test_connection();
+    cleanup_database(&mut pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&mut pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();

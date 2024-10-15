@@ -4,8 +4,6 @@ use rocket::local::blocking::Client;
 use rocket::{self, routes};
 use crate::todos::{get_todos, add_todo, delete_todo, update_todo, complete_todo};
 use crate::user::{create_user, get_user_by_id};
-use std::fs;
-use std::path::Path;
 use diesel::sql_query;
 use diesel::r2d2::{self, ConnectionManager};
 
@@ -58,17 +56,19 @@ pub fn run_seed_script(pool: &DbPool) -> Result<(), diesel::result::Error> {
     Ok(())
 }
 
-pub fn cleanup_database() {
+pub fn cleanup_database(pool: &DbPool) -> Result<(), diesel::result::Error> {
     info!("Cleaning up database");
 
-    let path = "test.sqlite";
-    if Path::new(path).exists() {
-        if let Err(e) = fs::remove_file(path) {
-            error!("Failed to remove test.sqlite: {:?}", e);
-        } else {
-            info!("Successfully removed test.sqlite");
+    // Get a connection from the pool
+    let mut connection = pool.get().expect("Failed to get connection from pool.");
+
+    let sql = include_str!("../tests/cleanup.sql");
+    for statement in sql.split(';') {
+        let trimmed = statement.trim();
+        if !trimmed.is_empty() {
+            sql_query(trimmed)
+                .execute(&mut connection)?;  // Now using pooled connection
         }
-    } else {
-        info!("No test.sqlite file found to remove.");
     }
+    Ok(())
 }

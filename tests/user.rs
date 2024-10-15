@@ -5,8 +5,8 @@ use rocket::http::ContentType;
 
 #[test]
 fn test_create_user_valid() {
-    cleanup_database(); // Clean up the database before starting the test
     let pool = establish_test_connection();
+    cleanup_database(&pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
@@ -28,8 +28,8 @@ fn test_create_user_valid() {
 
 #[test]
 fn test_create_user_empty_username() {
-    cleanup_database(); // Clean up the database before starting the test
     let pool = establish_test_connection();
+    cleanup_database(&pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
@@ -51,8 +51,8 @@ fn test_create_user_empty_username() {
 
 #[test]
 fn test_create_user_empty_password() {
-    cleanup_database(); // Clean up the database before starting the test
     let pool = establish_test_connection();
+    cleanup_database(&pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
@@ -74,8 +74,8 @@ fn test_create_user_empty_password() {
 
 #[test]
 fn test_get_user_by_id() {
-    cleanup_database(); // Clean up the database before starting the test
     let pool = establish_test_connection();
+    cleanup_database(&pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
@@ -109,8 +109,8 @@ fn test_get_user_by_id() {
 
 #[test]
 fn test_get_user_by_id_not_found() {
-    cleanup_database(); // Clean up the database before starting the test
-    let pool = establish_test_connection();
+    let mut pool = establish_test_connection();
+    cleanup_database(&mut pool).unwrap(); // Clean up the database before starting the test
     run_seed_script(&pool).unwrap(); // Seed the database with initial data
 
     let client = setup_rocket();
