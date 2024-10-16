@@ -148,3 +148,23 @@ pub fn complete_todo(pool: &State<DbPool>, id: i32) -> Result<&'static str, (Sta
 
     Ok("Todo marked as completed!")
 }
+
+#[get("/todos/search?<query>&<user_id>")]
+pub fn search_todos(pool: &State<DbPool>, query: Option<String>, user_id: i32) -> Result<Json<Vec<TodoItem>>, (Status, &'static str)> {
+    let mut connection = pool.get().map_err(|_| (Status::InternalServerError, "Failed to get connection from pool"))?;
+
+    let results: Vec<TodoItem> = if let Some(query) = query {
+        todos::table
+            .filter(todos::dsl::title.like(format!("%{}%", query)))  // Search by title
+            .filter(todos::dsl::user_id.eq(user_id))  // Ensure user_id matches
+            .load(&mut connection)
+            .map_err(|_| (Status::InternalServerError, "Failed to search todos"))?
+    } else {
+        todos::table
+            .filter(todos::dsl::user_id.eq(user_id))  // Fetch todos only for the user
+            .load(&mut connection)
+            .map_err(|_| (Status::InternalServerError, "Failed to fetch todos"))?
+    };
+
+    Ok(Json(results))
+}

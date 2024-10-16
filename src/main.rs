@@ -30,5 +30,5 @@ fn rocket() -> _ {
             info!("Rocket has launched successfully!");
         })))
         .manage(pool)
-        .mount("/", routes![todos::get_todos, todos::add_todo, todos::delete_todo, todos::update_todo, todos::complete_todo, user::create_user, user::get_user_by_id])
+        .mount("/", routes![todos::get_todos, todos::add_todo, todos::delete_todo, todos::update_todo, todos::complete_todo, user::create_user, user::get_user_by_id, todos::search_todos])
 }
